@@ -11,3 +11,6 @@ art-raw/
 # 本地数据与构建产物
 /data/
 /build/
+
+# 部署配置只留在本机
+deploy/release.env

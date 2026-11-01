@@ -1,0 +1,25 @@
+# 数学小伙伴的 Caddy 站点。release.sh install 会把 MB_DOMAIN 换成你的域名，
+# 放到 /etc/caddy/sites/mathbuddies.caddy。主配置要有一行：import /etc/caddy/sites/*.caddy
+# 第一版是纯静态网页，数据都在孩子手机的浏览器里，服务器上没有数据。
+MB_DOMAIN {
+	encode zstd gzip
+	root * /opt/mathbuddies/current
+	try_files {path} /index.html
+	file_server
+
+	# 带哈希的资源永久缓存；index.html 每次都问一下，发布后马上生效
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	@html path / /index.html
+	header @html Cache-Control "no-cache"
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		# 只加载本站资源；录音试听用 blob:，网站图标用 data:
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+		Permissions-Policy "microphone=(self), camera=(), geolocation=()"
+		-Server
+	}
+}

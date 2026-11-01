@@ -9,6 +9,8 @@ export interface Run {
   warmups: number[]
   items: Item[]
   placement?: PlacementItem[]
+  /** 自由玩最多多久 */
+  freeLimitMs?: number
 }
 
 export interface RunResult {

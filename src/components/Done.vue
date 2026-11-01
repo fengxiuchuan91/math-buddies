@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { speak } from '../voice'
 import { COMPANION_BY_ID } from '../lib/facts'
 import { STAGE_NAMES, stage, type Stage, type WorldState } from '../lib/world'
 import type { RunResult } from '../run'
 import Buddy from './Buddy.vue'
+import { PHRASES } from '../lib/phrases'
 
-const props = defineProps<{ r: RunResult; before: Map<string, Stage>; starsBefore: number; w: WorldState }>()
+const props = defineProps<{ r: RunResult; before: Map<string, Stage>; starsBefore: number; w: WorldState; childName: string }>()
 const emit = defineEmits<{ home: [] }>()
+// 进完成页读一句：称呼 + 标题
+onMounted(() => speak(props.childName ? `${props.childName}，${title.value}` : title.value))
 
 const cared = computed(() => props.r.companions.map((id) => COMPANION_BY_ID.get(id)!).filter(Boolean))
 const changed = computed(() =>
@@ -14,15 +18,15 @@ const changed = computed(() =>
 )
 // 蛋变小时候叫“孵出来”，再往上才叫“长大”
 const news = computed(() => [
-  { title: '孵出来了', list: changed.value.filter((c) => !(props.before.get(c.id) ?? 0)) },
-  { title: '长大了', list: changed.value.filter((c) => (props.before.get(c.id) ?? 0) > 0) },
+  { title: PHRASES.hatched, list: changed.value.filter((c) => !(props.before.get(c.id) ?? 0)) },
+  { title: PHRASES.grew, list: changed.value.filter((c) => (props.before.get(c.id) ?? 0) > 0) },
 ].filter((x) => x.list.length))
 const stars = computed(() => props.w.stars - props.starsBefore)
 const minutes = computed(() => Math.max(1, Math.round(props.r.ms / 60000)))
 const title = computed(() => {
-  if (props.r.mode === 'placement') return '看完啦，小伙伴们出来了！'
-  if (props.r.mode === 'free') return '玩得真开心'
-  return props.r.completed ? '今天的练习做完了！' : '下次接着玩'
+  if (props.r.mode === 'placement') return PHRASES.donePlacement
+  if (props.r.mode === 'free') return PHRASES.doneFree
+  return props.r.completed ? PHRASES.doneDaily : PHRASES.doneStopped
 })
 </script>
 

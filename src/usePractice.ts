@@ -11,11 +11,11 @@ import { placementBoxes, shouldSkip, type PlacementGroup, type PlacementResult }
 import { pick, type Rng } from './lib/rng'
 import { speak, stopSpeaking } from './voice'
 import type { Run, RunResult } from './run'
+import { PHRASES, PRAISE } from './lib/phrases'
 
 export type Phase = 'warmup' | 'teach' | 'ask' | 'ok' | 'oops' | 'explain' | 'fix' | 'end'
 type NoId<T> = T extends unknown ? Omit<T, 'id' | 't'> : never
 
-const PRAISE = ['对了！', '真棒！', '答对了！', '想得好！']
 export const FREE_LIMIT_MS = 10 * 60_000
 
 export function usePractice(
@@ -69,7 +69,7 @@ export function usePractice(
   function startWarmup() {
     phase.value = 'warmup'
     shownAt = 0
-    speak('看到几就按几，按得越快越好', () => { shownAt = performance.now() })
+    speak(PHRASES.warmup, () => { shownAt = performance.now() })
   }
 
   /** 热身和正式题一样：输完按确定，用时算到按确定 */
@@ -85,7 +85,7 @@ export function usePractice(
 
   // —— 出题 ——
   function show() {
-    if (run.mode === 'free' && Date.now() - startedAt > FREE_LIMIT_MS) { finish(true); return }
+    if (run.mode === 'free' && Date.now() - startedAt > (run.freeLimitMs ?? FREE_LIMIT_MS)) { finish(true); return }
     // 摸底不插再问，队列与摸底题一一对应
     while (placing && pos.value < queue.value.length && shouldSkip(run.placement![pos.value], wrongByGroup)) {
       pos.value++
@@ -98,7 +98,7 @@ export function usePractice(
       steps.value = explain(it.fact)
       step.value = 0
       phase.value = 'teach'
-      speak(`我们来学新的。${say(steps.value[0].text)}`)
+      speak(PHRASES.teachIntro + say(steps.value[0].text))
       return
     }
     ask()
@@ -158,7 +158,7 @@ export function usePractice(
       const g = run.placement![pos.value].group
       if (!ok) wrongByGroup[g] = (wrongByGroup[g] ?? 0) + 1
       phase.value = ok ? 'ok' : 'oops'
-      praise.value = ok ? pick(rng, PRAISE) : '没关系，下一题'
+      praise.value = ok ? pick(rng, PRAISE) : PHRASES.placementWrong
       setTimeout(next, ok ? 700 : 1000)
       return
     }
@@ -181,7 +181,7 @@ export function usePractice(
     steps.value = explain(cur.fact)
     step.value = 0
     phase.value = 'explain'
-    speak(`我们一起看看。${say(steps.value[0].text)}`)
+    speak(PHRASES.explainIntro + say(steps.value[0].text))
   }
 
   function explainNext() {
@@ -191,7 +191,7 @@ export function usePractice(
       return
     }
     phase.value = 'fix'
-    speak('你来写出答案')
+    speak(PHRASES.fixPrompt)
   }
 
   /** 讲完自己改对才往下走；这一下不记分 */
@@ -200,7 +200,7 @@ export function usePractice(
     if (!isRight(q.value, given)) { shake.value++; return }
     stopSpeaking()
     phase.value = 'ok'
-    praise.value = '对了，记住它'
+    praise.value = PHRASES.fixOk
     setTimeout(next, 800)
   }
 

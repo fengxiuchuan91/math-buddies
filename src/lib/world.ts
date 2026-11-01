@@ -40,7 +40,7 @@ export function stageOf(c: Companion, facts: Map<string, FactState>): Stage {
 }
 
 /** 一周从周一开始。日序号 0 是 1970-01-01，星期四 */
-const weekOf = (day: number) => Math.floor((day + 3) / 7)
+export const weekOf = (day: number) => Math.floor((day + 3) / 7)
 
 export function replay(events: MbEvent[]): WorldState {
   const facts = new Map<string, FactState>()

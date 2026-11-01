@@ -10,6 +10,7 @@ import Keypad from './Keypad.vue'
 import VisualView from './VisualView.vue'
 import Buddy from './Buddy.vue'
 import { speak } from '../voice'
+import { PHRASES } from '../lib/phrases'
 
 const props = defineProps<{ run: Run; baseline: Baseline; stageOf: (id: string) => Stage }>()
 const emit = defineEmits<{ record: [e: MbEvent]; done: [r: RunResult] }>()
@@ -63,7 +64,7 @@ function ok() {
   if (q.value?.input === 'picture') {
     if (op.value) { p.submit(op.value + input.value); return }
     // 还没选加减：提醒一下，不清空已输入的数
-    speak('先选加号还是减号')
+    speak(PHRASES.pickOp)
     shaking.value = true
     setTimeout(() => (shaking.value = false), 400)
     return
