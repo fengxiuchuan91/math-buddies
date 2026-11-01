@@ -1,0 +1,13 @@
+node_modules
+dist
+*.local
+.env*
+!.env.example
+tmp-screenshots/
+
+# 生图的原始输出和样图，挑完再进 public/
+art-raw/
+
+# 本地数据与构建产物
+/data/
+/build/

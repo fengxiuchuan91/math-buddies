@@ -1,0 +1,13 @@
+html, body {
+  margin: 0;
+  background: linear-gradient(#bfe7ff, #e8f7ff 60%, #fff6dc);
+  background-attachment: fixed;
+  color: #2b3a4a;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+button { font-family: inherit; cursor: pointer; }
+* { -webkit-touch-callout: none; }
