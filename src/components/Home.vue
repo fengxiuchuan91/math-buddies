@@ -13,14 +13,24 @@ const emit = defineEmits<{
   placement: []; daily: []; free: []; challenge: []; parent: []; record: []; patch: [p: Partial<Settings>]
 }>()
 
-const WORLDS: { id: World; name: string; locked: string }[] = [
-  { id: 'dino', name: '恐龙岛', locked: '' },
-  { id: 'park', name: '动物乐园', locked: '' },
-  { id: 'site', name: '工地', locked: '「凑十龙」和「小松鼠」长大后开放' },
+const WORLDS: { id: World; name: string; emoji: string; desc: string; locked: string }[] = [
+  { id: 'dino', name: '恐龙岛', emoji: '🦕', desc: '学习 2-10 的分与合', locked: '' },
+  { id: 'park', name: '动物乐园', emoji: '🦉', desc: '认识数字、顺序和大小', locked: '' },
+  { id: 'site', name: '工地', emoji: '🚜', desc: '20 以内加减法', locked: '「凑十龙」和「小松鼠」长大后开放' },
 ]
+
+const activeWorld = ref<World>('dino')
 const tab = ref<World>('dino')
 const open = computed(() => openWorlds(props.w))
 const list = computed(() => COMPANIONS.filter((c) => c.world === tab.value))
+const companions = computed(() => {
+  return list.value.map((c) => ({ ...c, stage: props.w.stages.get(c.id) ?? 0 }))
+})
+const totalProgress = computed(() => {
+  const total = COMPANIONS.length
+  const started = Array.from(props.w.stages.values()).filter((s) => s > 0).length
+  return Math.round((started / total) * 100)
+})
 const done = computed(() => dailyDone(props.w, props.day))
 const canFree = computed(() => props.settings.freeMinutes > 0 && [...props.w.facts.values()].some((s) => s.box >= 3))
 const tired = computed(() => COMPANIONS.filter((c) => sleepy(props.w, c, props.day)).length)
@@ -45,6 +55,7 @@ function toRecord() {
   <div class="home">
     <header class="top">
       <h1>{{ title }}</h1>
+      <div class="progress">总进度 {{ totalProgress }}%</div>
       <div class="stars">⭐ {{ w.stars }}</div>
       <button class="lock" aria-label="家长" @click="emit('parent')">🔒</button>
     </header>
@@ -61,18 +72,22 @@ function toRecord() {
 
     <nav class="tabs">
       <button v-for="x in WORLDS" :key="x.id" :class="{ on: tab === x.id, locked: !open.includes(x.id) }" @click="tab = x.id">
-        {{ open.includes(x.id) ? '' : '🔒' }}{{ x.name }}
+        <span class="emoji">{{ x.emoji }}</span>
+        <span class="text">
+          <span class="world-name">{{ open.includes(x.id) ? '' : '🔒' }}{{ x.name }}</span>
+          <span class="world-desc">{{ x.desc }}</span>
+        </span>
       </button>
     </nav>
 
     <p v-if="!open.includes(tab)" class="locked">{{ WORLDS.find((x) => x.id === tab)!.locked }}</p>
 
     <section class="grid" :style="bg ? { backgroundImage: `url(${bg})` } : undefined">
-      <button v-for="c in list" :key="c.id" class="card" @click="tap(c)">
-        <Buddy :id="c.id" :world="c.world" :stage="stage(w, c.id)" :sleepy="sleepy(w, c, day)" />
-        <div class="name">{{ stage(w, c.id) ? c.name : '还是一颗蛋' }}</div>
+      <button v-for="c in companions" :key="c.id" class="card" @click="tap(c)">
+        <Buddy :id="c.id" :world="c.world" :stage="c.stage" :sleepy="sleepy(w, c, day)" />
+        <div class="name">{{ c.stage ? c.name : '还是一颗蛋' }}</div>
         <div class="sub">{{ c.skill }}</div>
-        <div class="badge" :class="'s' + stage(w, c.id)">{{ STAGE_NAMES[stage(w, c.id)] }}</div>
+        <div class="badge" :class="'s' + c.stage">{{ STAGE_NAMES[c.stage] }}</div>
       </button>
     </section>
 
@@ -101,14 +116,20 @@ function toRecord() {
 .home { max-width: 960px; margin: 0 auto; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); min-height: 100vh; min-height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; }
 .top { display: flex; align-items: center; gap: 10px; }
 h1 { margin: 0; font-size: 24px; flex: 1; }
+.progress { background: #e3f2ff; border-radius: 14px; padding: 5px 12px; font-size: 13px; font-weight: 700; color: #2f7fd1; white-space: nowrap; }
 .stars { background: #fff; border-radius: 16px; padding: 6px 14px; font-size: 20px; font-weight: 800; box-shadow: 0 3px 0 #c9d6e3; }
 .lock { width: 44px; height: 44px; border: none; border-radius: 14px; background: #ffffffaa; font-size: 18px; }
 .tip { background: #fff8e1; border-radius: 16px; padding: 10px 12px; font-size: 14px; line-height: 1.5; }
 .tip button { margin: 6px 8px 0 0; min-height: 36px; padding: 0 14px; border: none; border-radius: 12px; background: #ff9f43; color: #fff; font-weight: 700; }
 .tip button.plain { background: #eef4fa; color: #6c7a89; }
 .tabs { display: flex; gap: 8px; }
-.tabs button { flex: 1; min-height: 48px; border: none; border-radius: 16px; background: #ffffffaa; font-size: 17px; font-weight: 700; color: #2b3a4a; }
+.tabs button { flex: 1; min-height: 68px; border: none; border-radius: 16px; background: #ffffffaa; font-size: 16px; font-weight: 700; color: #2b3a4a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 8px; }
+.tabs button .emoji { font-size: 24px; line-height: 1; }
+.tabs button .text { display: flex; flex-direction: column; gap: 2px; }
+.tabs button .world-name { font-size: 16px; font-weight: 700; }
+.tabs button .world-desc { font-size: 11px; font-weight: 400; color: #6c7a89; line-height: 1.2; }
 .tabs button.on { background: #fff; box-shadow: 0 3px 0 #c9d6e3; }
+.tabs button.on .world-desc { color: #8a97a5; }
 .tabs button.locked { color: #8a97a5; }
 .locked { margin: 0; text-align: center; color: #6c7a89; }
 .grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; border-radius: 20px; background-size: cover; background-position: center; }
